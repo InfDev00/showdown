@@ -1,0 +1,26 @@
+# ===== Unity (client/) =====
+client/[Ll]ibrary/
+client/[Tt]emp/
+client/[Oo]bj/
+client/[Bb]uild/
+client/[Bb]uilds/
+client/[Ll]ogs/
+client/[Uu]serSettings/
+client/[Mm]emoryCaptures/
+client/[Cc]rashlytics/
+*.csproj
+*.sln
+*.unityproj
+
+# ===== .NET Server (server/) =====
+server/**/bin/
+server/**/obj/
+
+# ===== macOS =====
+.DS_Store
+.AppleDouble
+
+# ===== IDE =====
+.vs/
+.vscode/
+.idea/
