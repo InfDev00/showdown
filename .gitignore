@@ -16,6 +16,12 @@ client/[Cc]rashlytics/
 server/**/bin/
 server/**/obj/
 
+# ===== Shared (shared/) =====
+!shared/shared.csproj
+!shared/Showdown.shared.asmdef
+shared/**/obj/
+shared/**/bin/
+
 # ===== macOS =====
 .DS_Store
 .AppleDouble
@@ -24,3 +30,11 @@ server/**/obj/
 .vs/
 .vscode/
 .idea/
+
+# ===== AI =====
+CLAUDE.md
+.claude/
+.cursor/
+.cursorrules
+.aider*
+.github/copilot-instructions.md
