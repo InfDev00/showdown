@@ -10,6 +10,8 @@ public class ClientSession
     private readonly TcpClient _client;
     private readonly PacketChannel _channel;
 
+    public string? UserName;
+
     public SessionCallback? OnPacketCallback;
     public Action<ClientSession>? OnDisconnect;
 

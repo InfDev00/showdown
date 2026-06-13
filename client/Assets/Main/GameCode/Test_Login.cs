@@ -10,11 +10,27 @@ public class Test_Login : MonoBehaviour
     private void Awake()
     {
         _network = GetComponent<NetworkManager>();
-        _network.OnLoginResult += result =>
-        {
-            _lastMessage = $"성공={result.Success}, 메시지={result.Message}";
-        };
+        _network.Dispatcher.RegisterEvent<LoginResultPacket>(PacketId.LoginResult, LoginResultCallback);
+        _network.Dispatcher.RegisterEvent<MatchResultPacket>(PacketId.MatchResult, MatchFoundCallback);
     }
+
+    private void LoginResultCallback(LoginResultPacket packet)
+    {
+        // 로그인 성공 시 매칭 대기열에 들어가므로 "대기중" 상태로 표시.
+        // (서버가 별도 대기 패킷을 보내지 않으니 현재는 로컬에서 추정)
+        _lastMessage = packet.Success
+            ? $"{packet.Message}\n상대를 기다리는 중..."
+            : $"로그인 실패: {packet.Message}";
+    }
+
+    private void MatchFoundCallback(MatchResultPacket packet)
+    {
+        if (packet.MatchStatus == Status.Success)
+            _lastMessage = $"매칭됨! 상대={packet.OpponentName} / 선공={(packet.IsMyTurnFirst ? "나" : "상대")}";
+        else
+            _lastMessage = "대기중...";
+    }
+
 
     private void OnGUI()
     {

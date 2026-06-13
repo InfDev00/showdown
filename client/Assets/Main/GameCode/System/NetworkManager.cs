@@ -18,9 +18,10 @@ public class NetworkManager : MonoBehaviour
     private CancellationTokenSource _cts;   // 연결 종료 시 수신 루프를 취소시키는 데 사용
     private PacketChannel _channel;          // 프레이밍 수신 루프 + 송신 (shared)
 
+    public PacketDispatcher Dispatcher { get; } = new PacketDispatcher();
+
     // 수신 스레드 → 메인 스레드로 패킷을 넘기는 다리. 양쪽 스레드가 접근하므로 ConcurrentQueue.
     private readonly ConcurrentQueue<byte[]> _recvQueue = new ConcurrentQueue<byte[]>();
-    public event Action<LoginResultPacket> OnLoginResult;
     public bool IsConnected => _client != null && _client.Connected;
 
     public async void Connect()
@@ -78,7 +79,7 @@ public class NetworkManager : MonoBehaviour
                 Debug.Log("접속 성공");
                 continue;
             }
-            HandlePacket(data);
+            Dispatcher.Dispatch(data);
         }
     }
 
@@ -88,24 +89,5 @@ public class NetworkManager : MonoBehaviour
     {
         _cts?.Cancel();   // 수신 루프 취소
         _client?.Close(); // 소켓 닫기 → 서버에 연결 종료 통지
-    }
-
-    // 패킷 id로 종류를 구분해 해당 처리를 한다 (PeekId → Deserialize<T>)
-    private void HandlePacket(byte[] data)
-    {
-        var id = Serializer.PeekId(data, 0, data.Length);
-        switch (id)
-        {
-            case PacketId.LoginResult:
-                {
-                    var result = Serializer.Deserialize<LoginResultPacket>(data, 0, data.Length);
-                    OnLoginResult?.Invoke(result);
-                }
-                break;
-
-            default:
-                Debug.LogError($"처리되지 않는 패킷: {id}");
-                break;
-        }
     }
 }

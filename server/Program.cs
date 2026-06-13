@@ -5,6 +5,7 @@ public class Program
 {
     static SessionManager _sessions = new SessionManager();
     static PacketDispatcher _dispatcher = new PacketDispatcher();
+    static MatchMaker _matchMaker = new MatchMaker();
 
     static async Task Main()
     {
@@ -34,20 +35,6 @@ public class Program
 
     static void RegisterCallbacks()
     {
-        _dispatcher.Register(PacketId.Login, HandleLogin);
-    }
-
-    static async Task HandleLogin(ClientSession session, byte[] data)
-    {
-        var login = Serializer.Deserialize<LoginPacket>(data, 0, data.Length);
-        Console.WriteLine($"로그인 요청: {login.UserName}");
-
-        var result = new LoginResultPacket
-        {
-            Success = true,                 // 학습용 스텁: 항상 성공
-            Message = $"환영합니다, {login.UserName}!"
-        };
-
-        await session.SendAsync(result);
+        _dispatcher.Register(new LoginHandler(_matchMaker));
     }
 }

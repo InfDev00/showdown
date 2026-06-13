@@ -1,18 +1,24 @@
+public interface IHandler
+{
+    PacketId Id { get; }
+    Task Handle(ClientSession session, byte[] data);
+}
+
 public class PacketDispatcher
 {
-    private readonly Dictionary<PacketId, ClientSession.SessionCallback> _callbacks = new Dictionary<PacketId, ClientSession.SessionCallback>();
+    private readonly Dictionary<PacketId, IHandler> _handlers = new Dictionary<PacketId, IHandler>();
 
-    public void Register(PacketId id, ClientSession.SessionCallback callback)
+    public void Register(IHandler handler)
     {
-        _callbacks[id] = callback;
+        _handlers[handler.Id] = handler;
     }
 
     public async Task Dispatch(ClientSession session, byte[] data)
     {
         var id = Serializer.PeekId(data, 0, data.Length);
-        if (_callbacks.TryGetValue(id, out var callback))
+        if (_handlers.TryGetValue(id, out var handler))
         {
-            await callback.Invoke(session, data);
+            await handler.Handle(session, data);
         }
         else
         {
