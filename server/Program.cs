@@ -3,8 +3,13 @@ using System.Net.Sockets;
 
 public class Program
 {
+    static SessionManager _sessions = new SessionManager();
+    static PacketDispatcher _dispatcher = new PacketDispatcher();
+
     static async Task Main()
     {
+        RegisterCallbacks();
+
         var listener = new TcpListener(IPAddress.Any, 8080);
         listener.Start();
         Console.WriteLine($"서버 시작. 대기중...");
@@ -12,60 +17,37 @@ public class Program
         while (true)
         {
             var client = await listener.AcceptTcpClientAsync();
-            Console.WriteLine($"클라이언트 접속: {client.Client.RemoteEndPoint}");
+            var session = new ClientSession(client);
 
-            _ = HandleClientAsync(client);
-        }
-    }
-
-    static async Task HandleClientAsync(TcpClient client)
-    {
-        using (client)
-        {
-            var stream = client.GetStream();
-            var assembler = new PacketAssembler();
-            var recv = new byte[1024];
-
-            int n = 0;
-            do
+            session.OnPacketCallback = _dispatcher.Dispatch;
+            session.OnDisconnect = s =>
             {
-                n = await stream.ReadAsync(recv, 0, recv.Length);
-                if (n > 0)
-                {
-                    assembler.Append(recv, 0, n);
+                _sessions.Remove(s);
+                Console.WriteLine($"세션 {s.Id} 접속 종료");
+            };
 
-                    while (assembler.TryAssemblePacket(out var packet))
-                    {
-                        await HandlePacket(packet!, stream);
-                    }
-                }
-
-
-            } while (n > 0);
+            _sessions.Add(session);
+            Console.WriteLine($"[세션 {session.Id}] 접속: {client.Client.RemoteEndPoint}");
+            _ = session.RunAsync();
         }
     }
 
-    static async Task HandlePacket(byte[] packet, NetworkStream stream)
+    static void RegisterCallbacks()
     {
-        var id = Serializer.PeekId(packet, 0, packet.Length);
-        switch (id)
+        _dispatcher.Register(PacketId.Login, HandleLogin);
+    }
+
+    static async Task HandleLogin(ClientSession session, byte[] data)
+    {
+        var login = Serializer.Deserialize<LoginPacket>(data, 0, data.Length);
+        Console.WriteLine($"로그인 요청: {login.UserName}");
+
+        var result = new LoginResultPacket
         {
-            case PacketId.Login:
-                var login = Serializer.Deserialize<LoginPacket>(packet, 0, packet.Length);
-                Console.WriteLine($"로그인 요청: {login.UserName}");
+            Success = true,                 // 학습용 스텁: 항상 성공
+            Message = $"환영합니다, {login.UserName}!"
+        };
 
-                var result = new LoginResultPacket
-                {
-                    Success = true,                 // 학습용 스텁: 항상 성공
-                    Message = $"환영합니다, {login.UserName}!"
-                };
-                byte[] response = Serializer.Serialize(result);
-                await stream.WriteAsync(response, 0, response.Length);
-                break;
-
-            default:
-                Console.WriteLine($"처리되지 않은 패킷: {id}");
-                break;
-        }
+        await session.SendAsync(result);
     }
 }
