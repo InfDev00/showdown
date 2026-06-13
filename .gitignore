@@ -10,6 +10,7 @@ client/[Mm]emoryCaptures/
 client/[Cc]rashlytics/
 *.csproj
 *.sln
+*.slnx
 *.unityproj
 
 # ===== .NET Server (server/) =====
@@ -18,7 +19,6 @@ server/**/obj/
 
 # ===== Shared (shared/) =====
 !shared/shared.csproj
-!shared/Showdown.shared.asmdef
 shared/**/obj/
 shared/**/bin/
 
